@@ -1,39 +1,37 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_IMAGE = 'nodejs-boilerplate:latest'
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                echo "Starting Stage SCM Pull"
-                script {
-                    git branch: 'main', url: 'https://github.com/Ashwathshetty-tech/nodeJS-BoilerPlate-CICD.git'
-                }
+                echo 'Checking out repository'
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/Ashwathshetty-tech/nodeJS-BoilerPlate-CICD.git']]])
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Starting Stage Build Docker Image"
-                sh '/usr/local/bin/docker-compose build'
+                echo 'Building Docker image'
+                sh 'docker build -t ${DOCKER_IMAGE} .'
             }
         }
 
-        stage('Run Docker Image') {
+        stage('Run with Docker Compose') {
             steps {
-                echo "Starting Stage Run Docker Image"
-                sh '/usr/local/bin/docker-compose up -d'
+                echo 'Starting services with docker-compose'
+                sh 'docker-compose up -d --build'
             }
         }
     }
 
     post {
         always {
-            echo "Stopping Docker Image Run"
-            sh '/usr/local/bin/docker-compose down'
+            echo 'Stopping and removing services'
+            sh 'docker-compose down --remove-orphans'
         }
     }
 }
